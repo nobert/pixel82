@@ -16,7 +16,10 @@ const state = {
     dragStartY: 0,
     polygonPoints: [],
     scale: 1,
-    originalImageType: 'image/png' // Track original image format
+    originalImageType: 'image/png', // Track original image format
+    lastTapTime: 0, // For double-tap detection on mobile
+    lastTapX: 0,
+    lastTapY: 0
 };
 
 // Shape class
@@ -384,6 +387,10 @@ function getCanvasCoordinates(e) {
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        // For touchend events, use changedTouches
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
     } else {
         clientX = e.clientX;
         clientY = e.clientY;
@@ -535,6 +542,35 @@ function handleTouchMove(e) {
 
 function handleTouchEnd(e) {
     e.preventDefault();
+    
+    // Handle double-tap for polygon tool
+    if (state.currentTool === 'polygon' && state.polygonPoints.length >= 3) {
+        const coords = getCanvasCoordinates(e);
+        const currentTime = new Date().getTime();
+        const tapInterval = currentTime - state.lastTapTime;
+        const tapDistance = Math.sqrt(
+            Math.pow(coords.x - state.lastTapX, 2) + 
+            Math.pow(coords.y - state.lastTapY, 2)
+        );
+        
+        // Double-tap detected: less than 300ms between taps and within 30px distance
+        if (tapInterval < 300 && tapDistance < 30) {
+            // Finish the polygon
+            const shape = new Shape('polygon', {
+                points: [...state.polygonPoints]
+            });
+            state.shapes.push(shape);
+            state.polygonPoints = [];
+            state.lastTapTime = 0; // Reset
+            render();
+            return;
+        }
+        
+        state.lastTapTime = currentTime;
+        state.lastTapX = coords.x;
+        state.lastTapY = coords.y;
+    }
+    
     handleMouseUp(e);
 }
 
