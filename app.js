@@ -311,11 +311,19 @@ function loadImage(img) {
     const MOBILE_BREAKPOINT = 1024;
     const DESKTOP_CONTROLS_WIDTH = 340; // 320px panel + 20px gap
     const PADDING = 40;
+    const HEADER_HEIGHT = 100; // Approximate header height (title + subtitle + margins)
     
     const isMobileLayout = window.innerWidth <= MOBILE_BREAKPOINT;
     const controlsPanelWidth = isMobileLayout ? 0 : DESKTOP_CONTROLS_WIDTH;
     const maxWidth = window.innerWidth - controlsPanelWidth - PADDING;
-    const maxHeight = window.innerHeight - 200;
+    
+    // Calculate maxHeight more intelligently for mobile
+    // On mobile landscape, we have less vertical space, so use a smaller offset
+    // On desktop/portrait, we can afford more offset for the header and padding
+    const headerOffset = isMobileLayout && window.innerWidth > window.innerHeight 
+        ? HEADER_HEIGHT  // Landscape mobile: minimal offset
+        : 200;           // Portrait mobile or desktop: more offset
+    const maxHeight = window.innerHeight - headerOffset;
     
     let width = img.width;
     let height = img.height;
