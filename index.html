@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel82 - Image Pixelation Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pixel82</h1>
+            <p class="subtitle">Pixelate sections of your images</p>
+        </header>
+
+        <main>
+            <!-- Controls Panel -->
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label for="imageUpload" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Upload Image
+                    </label>
+                    <input type="file" id="imageUpload" accept="image/png, image/jpeg" hidden>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="control-group">
+                    <label>Drawing Tools</label>
+                    <div class="button-group">
+                        <button id="rectangleTool" class="btn tool-btn active" title="Rectangle">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            </svg>
+                        </button>
+                        <button id="circleTool" class="btn tool-btn" title="Circle">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                            </svg>
+                        </button>
+                        <button id="polygonTool" class="btn tool-btn" title="Freehand Polygon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                        </button>
+                        <button id="selectTool" class="btn tool-btn" title="Select">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="control-group">
+                    <label for="pixelSize">Pixel Size: <span id="pixelSizeValue">10</span>px</label>
+                    <input type="range" id="pixelSize" min="2" max="50" value="10" class="slider">
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="control-group">
+                    <button id="deleteShape" class="btn btn-danger" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Delete Selected
+                    </button>
+                    <button id="clearAll" class="btn btn-secondary" disabled>
+                        Clear All
+                    </button>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="control-group">
+                    <button id="saveImage" class="btn btn-success" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Save Image
+                    </button>
+                </div>
+
+                <div class="instructions">
+                    <h3>Instructions:</h3>
+                    <ul>
+                        <li>Upload an image to get started</li>
+                        <li>Select a drawing tool</li>
+                        <li>Draw shapes on areas to pixelate</li>
+                        <li>Use select tool to move/resize shapes</li>
+                        <li>Adjust pixel size with slider</li>
+                        <li>Save your pixelated image</li>
+                    </ul>
+                    <p class="tip"><strong>Polygon tool:</strong> Click to add points, double-click to finish</p>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="canvas-container">
+                <div class="canvas-wrapper">
+                    <canvas id="mainCanvas"></canvas>
+                    <div id="dropzone" class="dropzone">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <p>Drop image here or click Upload Image</p>
+                        <p class="supported-formats">Supports JPEG and PNG</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

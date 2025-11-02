@@ -1,0 +1,27 @@
+# Ignore development files
+server.py
+__pycache__/
+*.pyc
+
+# Ignore documentation
+README.md
+
+# Ignore git
+.git/
+.gitignore
+
+# Ignore Docker files
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Ignore editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db

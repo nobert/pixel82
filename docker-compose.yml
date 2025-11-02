@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  pixel82:
+    build: .
+    container_name: pixel82
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    labels:
+      - "app=pixel82"
+      - "environment=production"
