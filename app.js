@@ -308,9 +308,13 @@ function loadImage(img) {
     // Calculate canvas size based on viewport
     // On mobile (width <= 1024px), the layout stacks vertically, so use full width
     // On desktop, account for the controls panel which is 320px + 20px gap
-    const isMobileLayout = window.innerWidth <= 1024;
-    const controlsPanelWidth = isMobileLayout ? 0 : 340; // 320px panel + 20px gap
-    const maxWidth = window.innerWidth - controlsPanelWidth - 40; // 40px for padding
+    const MOBILE_BREAKPOINT = 1024;
+    const DESKTOP_CONTROLS_WIDTH = 340; // 320px panel + 20px gap
+    const PADDING = 40;
+    
+    const isMobileLayout = window.innerWidth <= MOBILE_BREAKPOINT;
+    const controlsPanelWidth = isMobileLayout ? 0 : DESKTOP_CONTROLS_WIDTH;
+    const maxWidth = window.innerWidth - controlsPanelWidth - PADDING;
     const maxHeight = window.innerHeight - 200;
     
     let width = img.width;
