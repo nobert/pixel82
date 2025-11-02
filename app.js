@@ -316,6 +316,9 @@ function loadImage(img) {
     // On mobile (width <= 1024px), the layout stacks vertically, so use full width
     // On desktop, account for the controls panel which is 320px + 20px gap
     const MOBILE_BREAKPOINT = 1024;
+    // NOTE: Keep in sync with CSS:
+    // .controls-panel { width: 320px; } and the gap between panel and canvas (typically 20px).
+    // If these CSS values change, update this constant accordingly.
     const DESKTOP_CONTROLS_WIDTH = 340; // 320px panel + 20px gap
     const PADDING = 40;
     const HEADER_HEIGHT = 100; // Estimated header height for landscape mobile layout
@@ -565,12 +568,12 @@ function handleTouchEnd(e) {
         
         // Double-tap detected and polygon has at least 3 points
         if (state.polygonPoints.length >= 3 && 
+            state.lastTapTime > 0 &&
             tapInterval < DOUBLE_TAP_DELAY && 
             tapDistance < DOUBLE_TAP_DISTANCE) {
             // Finish the polygon
             completePolygon();
             state.lastTapTime = 0; // Reset
-            return;
         } else {
             // Track this tap for next double-tap detection
             state.lastTapTime = currentTime;
