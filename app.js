@@ -15,7 +15,8 @@ const state = {
     dragStartX: 0,
     dragStartY: 0,
     polygonPoints: [],
-    scale: 1
+    scale: 1,
+    originalImageType: 'image/png' // Track original image format
 };
 
 // Shape class
@@ -284,6 +285,9 @@ function handleImageFile(file) {
         alert('Please upload a PNG or JPEG image.');
         return;
     }
+
+    // Store the original image type for export
+    state.originalImageType = file.type;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -770,6 +774,8 @@ function applyPixelation(shape, sourceImageData) {
     const bbox = shape.getBoundingBox();
     const pixelSize = state.pixelSize;
     const canvasWidth = state.canvas.width;
+    const canvasHeight = state.canvas.height;
+    const source = sourceImageData.data;
 
     // Pixelate
     for (let y = Math.floor(bbox.y); y < bbox.y + bbox.height; y += pixelSize) {
@@ -785,15 +791,15 @@ function applyPixelation(shape, sourceImageData) {
             
             for (let py = 0; py < pixelSize; py++) {
                 for (let px = 0; px < pixelSize; px++) {
-                    const sampleX = Math.floor(x + px);
-                    const sampleY = Math.floor(y + py);
+                    const sampleX = x + px;
+                    const sampleY = y + py;
                     
-                    if (sampleX >= canvasWidth || sampleY >= state.canvas.height) continue;
+                    if (sampleX >= canvasWidth || sampleY >= canvasHeight) continue;
                     
-                    const index = (sampleY * canvasWidth + sampleX) * 4;
-                    r += sourceImageData.data[index];
-                    g += sourceImageData.data[index + 1];
-                    b += sourceImageData.data[index + 2];
+                    const sourceIndex = (Math.floor(sampleY) * canvasWidth + Math.floor(sampleX)) * 4;
+                    r += source[sourceIndex];
+                    g += source[sourceIndex + 1];
+                    b += source[sourceIndex + 2];
                     count++;
                 }
             }
@@ -804,18 +810,24 @@ function applyPixelation(shape, sourceImageData) {
             g = Math.floor(g / count);
             b = Math.floor(b / count);
 
-            // Fill the pixelated block
+            // Fill the pixelated block - use fillRect for blocks inside shape
             state.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
             
-            for (let py = 0; py < pixelSize; py++) {
-                for (let px = 0; px < pixelSize; px++) {
-                    const fillX = Math.floor(x + px);
-                    const fillY = Math.floor(y + py);
-                    
-                    if (fillX >= canvasWidth || fillY >= state.canvas.height) continue;
-                    
-                    if (shape.contains(fillX, fillY)) {
-                        state.ctx.fillRect(fillX, fillY, 1, 1);
+            // For simple shapes, fill entire block if center is inside
+            if (shape.type === 'rectangle' || shape.type === 'circle') {
+                state.ctx.fillRect(x, y, pixelSize, pixelSize);
+            } else {
+                // For polygons, check each pixel
+                for (let py = 0; py < pixelSize; py++) {
+                    for (let px = 0; px < pixelSize; px++) {
+                        const fillX = x + px;
+                        const fillY = y + py;
+                        
+                        if (fillX >= canvasWidth || fillY >= canvasHeight) continue;
+                        
+                        if (shape.contains(fillX, fillY)) {
+                            state.ctx.fillRect(fillX, fillY, 1, 1);
+                        }
                     }
                 }
             }
@@ -847,17 +859,23 @@ function saveImage() {
         applyPixelationToFinalImage(finalCtx, scaledShape, sourceImageData, finalCanvas.width, finalCanvas.height);
     });
 
+    // Determine format and extension
+    const isJpeg = state.originalImageType === 'image/jpeg';
+    const mimeType = isJpeg ? 'image/jpeg' : 'image/png';
+    const extension = isJpeg ? 'jpg' : 'png';
+    const quality = isJpeg ? 0.92 : undefined; // High quality JPEG, or default PNG
+
     // Download the image
     finalCanvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `pixelated-${Date.now()}.png`;
+        a.download = `pixelated-${Date.now()}.${extension}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }, 'image/png');
+    }, mimeType, quality);
 }
 
 function scaleShapeToOriginal(shape, scale) {
@@ -895,6 +913,7 @@ function scaleShapeToOriginal(shape, scale) {
 function applyPixelationToFinalImage(ctx, shape, sourceImageData, canvasWidth, canvasHeight) {
     const bbox = shape.getBoundingBox();
     const pixelSize = state.pixelSize;
+    const source = sourceImageData.data;
 
     // Pixelate
     for (let y = Math.floor(bbox.y); y < bbox.y + bbox.height; y += pixelSize) {
@@ -910,15 +929,15 @@ function applyPixelationToFinalImage(ctx, shape, sourceImageData, canvasWidth, c
             
             for (let py = 0; py < pixelSize; py++) {
                 for (let px = 0; px < pixelSize; px++) {
-                    const sampleX = Math.floor(x + px);
-                    const sampleY = Math.floor(y + py);
+                    const sampleX = x + px;
+                    const sampleY = y + py;
                     
                     if (sampleX >= canvasWidth || sampleY >= canvasHeight) continue;
                     
-                    const index = (sampleY * canvasWidth + sampleX) * 4;
-                    r += sourceImageData.data[index];
-                    g += sourceImageData.data[index + 1];
-                    b += sourceImageData.data[index + 2];
+                    const sourceIndex = (Math.floor(sampleY) * canvasWidth + Math.floor(sampleX)) * 4;
+                    r += source[sourceIndex];
+                    g += source[sourceIndex + 1];
+                    b += source[sourceIndex + 2];
                     count++;
                 }
             }
@@ -932,15 +951,21 @@ function applyPixelationToFinalImage(ctx, shape, sourceImageData, canvasWidth, c
             // Fill the pixelated block
             ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
             
-            for (let py = 0; py < pixelSize; py++) {
-                for (let px = 0; px < pixelSize; px++) {
-                    const fillX = Math.floor(x + px);
-                    const fillY = Math.floor(y + py);
-                    
-                    if (fillX >= canvasWidth || fillY >= canvasHeight) continue;
-                    
-                    if (shape.contains(fillX, fillY)) {
-                        ctx.fillRect(fillX, fillY, 1, 1);
+            // For simple shapes, fill entire block if center is inside
+            if (shape.type === 'rectangle' || shape.type === 'circle') {
+                ctx.fillRect(x, y, pixelSize, pixelSize);
+            } else {
+                // For polygons, check each pixel
+                for (let py = 0; py < pixelSize; py++) {
+                    for (let px = 0; px < pixelSize; px++) {
+                        const fillX = x + px;
+                        const fillY = y + py;
+                        
+                        if (fillX >= canvasWidth || fillY >= canvasHeight) continue;
+                        
+                        if (shape.contains(fillX, fillY)) {
+                            ctx.fillRect(fillX, fillY, 1, 1);
+                        }
                     }
                 }
             }
