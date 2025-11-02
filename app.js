@@ -911,12 +911,13 @@ function saveImage() {
     // Get image data once before pixelating
     const sourceImageData = finalCtx.getImageData(0, 0, finalCanvas.width, finalCanvas.height);
 
-    // Scale shapes to original image size
+    // Scale shapes and pixel size to original image size
     const scaleRatio = state.originalImage.width / state.canvas.width;
+    const scaledPixelSize = Math.round(state.pixelSize * scaleRatio);
 
     state.shapes.forEach(shape => {
         const scaledShape = scaleShapeToOriginal(shape, scaleRatio);
-        applyPixelationToFinalImage(finalCtx, scaledShape, sourceImageData, finalCanvas.width, finalCanvas.height);
+        applyPixelationToFinalImage(finalCtx, scaledShape, sourceImageData, finalCanvas.width, finalCanvas.height, scaledPixelSize);
     });
 
     // Determine format and extension
@@ -970,9 +971,8 @@ function scaleShapeToOriginal(shape, scale) {
     return scaledShape;
 }
 
-function applyPixelationToFinalImage(ctx, shape, sourceImageData, canvasWidth, canvasHeight) {
+function applyPixelationToFinalImage(ctx, shape, sourceImageData, canvasWidth, canvasHeight, pixelSize) {
     const bbox = shape.getBoundingBox();
-    const pixelSize = state.pixelSize;
     const source = sourceImageData.data;
 
     // Pixelate
