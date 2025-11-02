@@ -522,7 +522,7 @@ function handleMouseUp(e) {
     render();
 }
 
-function handleDoubleClick(e) {
+function completePolygon() {
     if (state.currentTool === 'polygon' && state.polygonPoints.length >= 3) {
         const shape = new Shape('polygon', {
             points: [...state.polygonPoints]
@@ -530,7 +530,13 @@ function handleDoubleClick(e) {
         state.shapes.push(shape);
         state.polygonPoints = [];
         render();
+        return true;
     }
+    return false;
+}
+
+function handleDoubleClick(e) {
+    completePolygon();
 }
 
 // Touch event handlers
@@ -562,13 +568,8 @@ function handleTouchEnd(e) {
             tapInterval < DOUBLE_TAP_DELAY && 
             tapDistance < DOUBLE_TAP_DISTANCE) {
             // Finish the polygon
-            const shape = new Shape('polygon', {
-                points: [...state.polygonPoints]
-            });
-            state.shapes.push(shape);
-            state.polygonPoints = [];
+            completePolygon();
             state.lastTapTime = 0; // Reset
-            render();
             return;
         } else {
             // Track this tap for next double-tap detection
