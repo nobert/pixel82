@@ -318,7 +318,7 @@ function loadImage(img) {
     const MOBILE_BREAKPOINT = 1024;
     const DESKTOP_CONTROLS_WIDTH = 340; // 320px panel + 20px gap
     const PADDING = 40;
-    const HEADER_HEIGHT = 100; // Minimal header height for landscape mobile
+    const HEADER_HEIGHT = 100; // Estimated header height for landscape mobile layout
     const STANDARD_HEADER_OFFSET = 200; // Standard offset for portrait/desktop
     
     const isMobileLayout = window.innerWidth <= MOBILE_BREAKPOINT;
@@ -570,12 +570,12 @@ function handleTouchEnd(e) {
             state.lastTapTime = 0; // Reset
             render();
             return;
+        } else {
+            // Track this tap for next double-tap detection
+            state.lastTapTime = currentTime;
+            state.lastTapX = coords.x;
+            state.lastTapY = coords.y;
         }
-        
-        // Track this tap for next double-tap detection
-        state.lastTapTime = currentTime;
-        state.lastTapX = coords.x;
-        state.lastTapY = coords.y;
     }
     
     handleMouseUp(e);
