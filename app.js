@@ -1,3 +1,7 @@
+// Configuration constants
+const DOUBLE_TAP_DELAY = 300; // Maximum time between taps (milliseconds)
+const DOUBLE_TAP_DISTANCE = 30; // Maximum distance between taps (pixels)
+
 // Application State
 const state = {
     image: null,
@@ -16,7 +20,10 @@ const state = {
     dragStartY: 0,
     polygonPoints: [],
     scale: 1,
-    originalImageType: 'image/png' // Track original image format
+    originalImageType: 'image/png', // Track original image format
+    lastTapTime: 0, // For double-tap detection on mobile
+    lastTapX: 0,
+    lastTapY: 0
 };
 
 // Shape class
@@ -305,9 +312,29 @@ function loadImage(img) {
     // Hide dropzone
     document.getElementById('dropzone').style.display = 'none';
     
-    // Calculate canvas size
-    const maxWidth = window.innerWidth - 400; // Account for controls panel
-    const maxHeight = window.innerHeight - 200;
+    // Calculate canvas size based on viewport
+    // On mobile (width <= 1024px), the layout stacks vertically, so use full width
+    // On desktop, account for the controls panel which is 320px + 20px gap
+    const MOBILE_BREAKPOINT = 1024;
+    // NOTE: Keep in sync with CSS:
+    // .controls-panel { width: 320px; } and the gap between panel and canvas (typically 20px).
+    // If these CSS values change, update this constant accordingly.
+    const DESKTOP_CONTROLS_WIDTH = 340; // 320px panel + 20px gap
+    const PADDING = 40;
+    const HEADER_HEIGHT = 100; // Estimated header height for landscape mobile layout
+    const STANDARD_HEADER_OFFSET = 200; // Standard offset for portrait/desktop
+    
+    const isMobileLayout = window.innerWidth <= MOBILE_BREAKPOINT;
+    const controlsPanelWidth = isMobileLayout ? 0 : DESKTOP_CONTROLS_WIDTH;
+    const maxWidth = window.innerWidth - controlsPanelWidth - PADDING;
+    
+    // Calculate maxHeight more intelligently for mobile
+    // On mobile landscape, we have less vertical space, so use a smaller offset
+    // On desktop/portrait, we can afford more offset for the header and padding
+    const headerOffset = isMobileLayout && window.innerWidth > window.innerHeight 
+        ? HEADER_HEIGHT              // Landscape mobile: minimal offset
+        : STANDARD_HEADER_OFFSET;    // Portrait mobile or desktop: standard offset
+    const maxHeight = window.innerHeight - headerOffset;
     
     let width = img.width;
     let height = img.height;
@@ -367,6 +394,10 @@ function getCanvasCoordinates(e) {
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        // For touchend events, use changedTouches
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
     } else {
         clientX = e.clientX;
         clientY = e.clientY;
@@ -494,7 +525,7 @@ function handleMouseUp(e) {
     render();
 }
 
-function handleDoubleClick(e) {
+function completePolygon() {
     if (state.currentTool === 'polygon' && state.polygonPoints.length >= 3) {
         const shape = new Shape('polygon', {
             points: [...state.polygonPoints]
@@ -502,7 +533,13 @@ function handleDoubleClick(e) {
         state.shapes.push(shape);
         state.polygonPoints = [];
         render();
+        return true;
     }
+    return false;
+}
+
+function handleDoubleClick(e) {
+    completePolygon();
 }
 
 // Touch event handlers
@@ -518,6 +555,33 @@ function handleTouchMove(e) {
 
 function handleTouchEnd(e) {
     e.preventDefault();
+    
+    // Handle double-tap for polygon tool
+    if (state.currentTool === 'polygon') {
+        const coords = getCanvasCoordinates(e);
+        const currentTime = Date.now();
+        const tapInterval = currentTime - state.lastTapTime;
+        const tapDistance = Math.sqrt(
+            Math.pow(coords.x - state.lastTapX, 2) + 
+            Math.pow(coords.y - state.lastTapY, 2)
+        );
+        
+        // Double-tap detected and polygon has at least 3 points
+        if (state.polygonPoints.length >= 3 && 
+            state.lastTapTime > 0 &&
+            tapInterval < DOUBLE_TAP_DELAY && 
+            tapDistance < DOUBLE_TAP_DISTANCE) {
+            // Finish the polygon
+            completePolygon();
+            state.lastTapTime = 0; // Reset
+        } else {
+            // Track this tap for next double-tap detection
+            state.lastTapTime = currentTime;
+            state.lastTapX = coords.x;
+            state.lastTapY = coords.y;
+        }
+    }
+    
     handleMouseUp(e);
 }
 
@@ -851,12 +915,13 @@ function saveImage() {
     // Get image data once before pixelating
     const sourceImageData = finalCtx.getImageData(0, 0, finalCanvas.width, finalCanvas.height);
 
-    // Scale shapes to original image size
+    // Scale shapes and pixel size to original image size
     const scaleRatio = state.originalImage.width / state.canvas.width;
+    const scaledPixelSize = Math.round(state.pixelSize * scaleRatio);
 
     state.shapes.forEach(shape => {
         const scaledShape = scaleShapeToOriginal(shape, scaleRatio);
-        applyPixelationToFinalImage(finalCtx, scaledShape, sourceImageData, finalCanvas.width, finalCanvas.height);
+        applyPixelationToFinalImage(finalCtx, scaledShape, sourceImageData, finalCanvas.width, finalCanvas.height, scaledPixelSize);
     });
 
     // Determine format and extension
@@ -910,9 +975,8 @@ function scaleShapeToOriginal(shape, scale) {
     return scaledShape;
 }
 
-function applyPixelationToFinalImage(ctx, shape, sourceImageData, canvasWidth, canvasHeight) {
+function applyPixelationToFinalImage(ctx, shape, sourceImageData, canvasWidth, canvasHeight, pixelSize) {
     const bbox = shape.getBoundingBox();
-    const pixelSize = state.pixelSize;
     const source = sourceImageData.data;
 
     // Pixelate
