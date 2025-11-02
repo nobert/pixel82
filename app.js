@@ -1,3 +1,7 @@
+// Configuration constants
+const DOUBLE_TAP_DELAY = 300; // Maximum time between taps (milliseconds)
+const DOUBLE_TAP_DISTANCE = 30; // Maximum distance between taps (pixels)
+
 // Application State
 const state = {
     image: null,
@@ -544,17 +548,19 @@ function handleTouchEnd(e) {
     e.preventDefault();
     
     // Handle double-tap for polygon tool
-    if (state.currentTool === 'polygon' && state.polygonPoints.length >= 3) {
+    if (state.currentTool === 'polygon') {
         const coords = getCanvasCoordinates(e);
-        const currentTime = new Date().getTime();
+        const currentTime = Date.now();
         const tapInterval = currentTime - state.lastTapTime;
         const tapDistance = Math.sqrt(
             Math.pow(coords.x - state.lastTapX, 2) + 
             Math.pow(coords.y - state.lastTapY, 2)
         );
         
-        // Double-tap detected: less than 300ms between taps and within 30px distance
-        if (tapInterval < 300 && tapDistance < 30) {
+        // Double-tap detected and polygon has at least 3 points
+        if (state.polygonPoints.length >= 3 && 
+            tapInterval < DOUBLE_TAP_DELAY && 
+            tapDistance < DOUBLE_TAP_DISTANCE) {
             // Finish the polygon
             const shape = new Shape('polygon', {
                 points: [...state.polygonPoints]
@@ -566,6 +572,7 @@ function handleTouchEnd(e) {
             return;
         }
         
+        // Track this tap for next double-tap detection
         state.lastTapTime = currentTime;
         state.lastTapX = coords.x;
         state.lastTapY = coords.y;
