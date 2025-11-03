@@ -716,7 +716,7 @@ function resizeEllipse(data, handle, dx, dy) {
         case 'resize-br':
             // Corner handles: resize both axes proportionally
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const delta = (handle.includes('l') || handle.includes('t')) ? -distance : distance;
+            const delta = (handle === 'resize-tl' || handle === 'resize-bl') ? -distance : distance;
             data.radiusX = Math.max(5, data.radiusX + delta);
             data.radiusY = Math.max(5, data.radiusY + delta);
             break;
