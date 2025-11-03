@@ -11,7 +11,7 @@ A modern, fully client-side web application for pixelating sections of images. P
 - **📱 Mobile & Desktop**: Fully responsive design works seamlessly on all devices
 - **🎨 Multiple Drawing Tools**:
   - Rectangle tool for quick box selections
-  - Circle tool for circular areas
+  - Ellipse tool for oval and circular areas
   - Freehand polygon tool for precise custom shapes
 - **✏️ Shape Manipulation**:
   - Select and move shapes
@@ -103,7 +103,7 @@ docker-compose down
 
 2. **Draw Pixelation Areas**
    - **Rectangle Tool**: Click and drag to draw rectangles
-   - **Circle Tool**: Click center point and drag to set radius
+   - **Ellipse Tool**: Click center point and drag to set width and height
    - **Polygon Tool**: Click to add points, double-click to finish the shape
    - Adjust pixel size with the slider (2-50px)
 
@@ -153,9 +153,10 @@ pixel82/
 - Click and drag to create rectangular selections
 - Perfect for standard areas like license plates or text blocks
 
-**Circle Tool** ⭕
-- Click center point and drag outward to set radius
-- Ideal for faces or circular objects
+**Ellipse Tool** ⭕
+- Click center point and drag to set width and height independently
+- Ideal for faces, circular objects, or oval areas
+- Supports unconstrained aspect ratios for flexible selections
 
 **Polygon Tool** 🔷
 - Click to place each vertex of a custom polygon

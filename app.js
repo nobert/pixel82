@@ -29,7 +29,7 @@ const state = {
 // Shape class
 class Shape {
     constructor(type, data) {
-        this.type = type; // 'rectangle', 'circle', 'polygon'
+        this.type = type; // 'rectangle', 'ellipse', 'polygon'
         this.data = data;
         this.selected = false;
     }
@@ -39,10 +39,12 @@ class Shape {
             case 'rectangle':
                 return x >= this.data.x && x <= this.data.x + this.data.width &&
                        y >= this.data.y && y <= this.data.y + this.data.height;
-            case 'circle':
+            case 'ellipse':
                 const dx = x - this.data.x;
                 const dy = y - this.data.y;
-                return (dx * dx + dy * dy) <= (this.data.radius * this.data.radius);
+                // Ellipse equation: (dx/radiusX)^2 + (dy/radiusY)^2 <= 1
+                return (dx * dx) / (this.data.radiusX * this.data.radiusX) + 
+                       (dy * dy) / (this.data.radiusY * this.data.radiusY) <= 1;
             case 'polygon':
                 return this.pointInPolygon(x, y, this.data.points);
         }
@@ -70,12 +72,12 @@ class Shape {
                     width: this.data.width,
                     height: this.data.height
                 };
-            case 'circle':
+            case 'ellipse':
                 return {
-                    x: this.data.x - this.data.radius,
-                    y: this.data.y - this.data.radius,
-                    width: this.data.radius * 2,
-                    height: this.data.radius * 2
+                    x: this.data.x - this.data.radiusX,
+                    y: this.data.y - this.data.radiusY,
+                    width: this.data.radiusX * 2,
+                    height: this.data.radiusY * 2
                 };
             case 'polygon':
                 const xs = this.data.points.map(p => p.x);
@@ -110,9 +112,9 @@ class Shape {
             case 'rectangle':
                 ctx.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
                 break;
-            case 'circle':
+            case 'ellipse':
                 ctx.beginPath();
-                ctx.arc(this.data.x, this.data.y, this.data.radius, 0, Math.PI * 2);
+                ctx.ellipse(this.data.x, this.data.y, this.data.radiusX, this.data.radiusY, 0, 0, Math.PI * 2);
                 ctx.stroke();
                 break;
             case 'polygon':
@@ -153,7 +155,7 @@ class Shape {
         ];
 
         // Edge handles
-        if (this.type === 'rectangle' || this.type === 'circle') {
+        if (this.type === 'rectangle' || this.type === 'ellipse') {
             handles.push(
                 { x: bbox.x + bbox.width / 2, y: bbox.y }, // top
                 { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height }, // bottom
@@ -182,7 +184,7 @@ class Shape {
             { x: bbox.x + bbox.width, y: bbox.y + bbox.height, type: 'resize-br' },
         ];
 
-        if (this.type === 'rectangle' || this.type === 'circle') {
+        if (this.type === 'rectangle' || this.type === 'ellipse') {
             handles.push(
                 { x: bbox.x + bbox.width / 2, y: bbox.y, type: 'resize-t' },
                 { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height, type: 'resize-b' },
@@ -235,7 +237,7 @@ function setupEventListeners() {
 
     // Tool selection
     document.getElementById('rectangleTool').addEventListener('click', () => selectTool('rectangle'));
-    document.getElementById('circleTool').addEventListener('click', () => selectTool('circle'));
+    document.getElementById('ellipseTool').addEventListener('click', () => selectTool('ellipse'));
     document.getElementById('polygonTool').addEventListener('click', () => selectTool('polygon'));
     document.getElementById('selectTool').addEventListener('click', () => selectTool('select'));
 
@@ -479,9 +481,9 @@ function handleMouseMove(e) {
     if (state.currentTool === 'rectangle') {
         render();
         drawTemporaryRectangle(x, y);
-    } else if (state.currentTool === 'circle') {
+    } else if (state.currentTool === 'ellipse') {
         render();
-        drawTemporaryCircle(x, y);
+        drawTemporaryEllipse(x, y);
     } else if (state.currentTool === 'select' && state.selectedShape) {
         handleShapeDrag(x, y);
     }
@@ -507,14 +509,16 @@ function handleMouseUp(e) {
             });
             state.shapes.push(shape);
         }
-    } else if (state.currentTool === 'circle') {
-        const radius = Math.sqrt(Math.pow(x - state.startX, 2) + Math.pow(y - state.startY, 2));
+    } else if (state.currentTool === 'ellipse') {
+        const radiusX = Math.abs(x - state.startX);
+        const radiusY = Math.abs(y - state.startY);
         
-        if (radius > 5) {
-            const shape = new Shape('circle', {
+        if (radiusX > 5 && radiusY > 5) {
+            const shape = new Shape('ellipse', {
                 x: state.startX,
                 y: state.startY,
-                radius: radius
+                radiusX: radiusX,
+                radiusY: radiusY
             });
             state.shapes.push(shape);
         }
@@ -600,14 +604,15 @@ function drawTemporaryRectangle(x, y) {
     );
 }
 
-function drawTemporaryCircle(x, y) {
-    const radius = Math.sqrt(Math.pow(x - state.startX, 2) + Math.pow(y - state.startY, 2));
+function drawTemporaryEllipse(x, y) {
+    const radiusX = Math.abs(x - state.startX);
+    const radiusY = Math.abs(y - state.startY);
     
     state.ctx.strokeStyle = '#6366f1';
     state.ctx.lineWidth = 2;
     state.ctx.setLineDash([5, 5]);
     state.ctx.beginPath();
-    state.ctx.arc(state.startX, state.startY, radius, 0, Math.PI * 2);
+    state.ctx.ellipse(state.startX, state.startY, radiusX, radiusY, 0, 0, Math.PI * 2);
     state.ctx.stroke();
 }
 
@@ -650,8 +655,8 @@ function resizeShape(shape, handle, dx, dy) {
         case 'rectangle':
             resizeRectangle(shape.data, handle, dx, dy);
             break;
-        case 'circle':
-            resizeCircle(shape.data, handle, dx, dy);
+        case 'ellipse':
+            resizeEllipse(shape.data, handle, dx, dy);
             break;
         case 'polygon':
             resizePolygon(shape.data, handle, dx, dy);
@@ -702,10 +707,32 @@ function resizeRectangle(data, handle, dx, dy) {
     if (data.height < 10) data.height = 10;
 }
 
-function resizeCircle(data, handle, dx, dy) {
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const delta = handle.includes('l') || handle.includes('t') ? -distance : distance;
-    data.radius = Math.max(5, data.radius + delta);
+function resizeEllipse(data, handle, dx, dy) {
+    // Resize ellipse with independent control of radiusX and radiusY
+    switch (handle) {
+        case 'resize-tl':
+        case 'resize-tr':
+        case 'resize-bl':
+        case 'resize-br':
+            // Corner handles: resize both axes proportionally
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const delta = (handle.includes('l') || handle.includes('t')) ? -distance : distance;
+            data.radiusX = Math.max(5, data.radiusX + delta);
+            data.radiusY = Math.max(5, data.radiusY + delta);
+            break;
+        case 'resize-t':
+        case 'resize-b':
+            // Top/bottom handles: resize vertical radius only
+            const deltaY = handle === 'resize-t' ? -dy : dy;
+            data.radiusY = Math.max(5, data.radiusY + deltaY);
+            break;
+        case 'resize-l':
+        case 'resize-r':
+            // Left/right handles: resize horizontal radius only
+            const deltaX = handle === 'resize-l' ? -dx : dx;
+            data.radiusX = Math.max(5, data.radiusX + deltaX);
+            break;
+    }
 }
 
 function resizePolygon(data, handle, dx, dy) {
@@ -878,7 +905,7 @@ function applyPixelation(shape, sourceImageData) {
             state.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
             
             // For simple shapes, fill entire block if center is inside
-            if (shape.type === 'rectangle' || shape.type === 'circle') {
+            if (shape.type === 'rectangle' || shape.type === 'ellipse') {
                 state.ctx.fillRect(x, y, pixelSize, pixelSize);
             } else {
                 // For polygons, check each pixel
@@ -955,11 +982,12 @@ function scaleShapeToOriginal(shape, scale) {
                 height: shape.data.height * scale
             };
             break;
-        case 'circle':
+        case 'ellipse':
             scaledShape.data = {
                 x: shape.data.x * scale,
                 y: shape.data.y * scale,
-                radius: shape.data.radius * scale
+                radiusX: shape.data.radiusX * scale,
+                radiusY: shape.data.radiusY * scale
             };
             break;
         case 'polygon':
@@ -1016,7 +1044,7 @@ function applyPixelationToFinalImage(ctx, shape, sourceImageData, canvasWidth, c
             ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
             
             // For simple shapes, fill entire block if center is inside
-            if (shape.type === 'rectangle' || shape.type === 'circle') {
+            if (shape.type === 'rectangle' || shape.type === 'ellipse') {
                 ctx.fillRect(x, y, pixelSize, pixelSize);
             } else {
                 // For polygons, check each pixel
