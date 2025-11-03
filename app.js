@@ -637,6 +637,10 @@ function moveShape(shape, dx, dy) {
             shape.data.x += dx;
             shape.data.y += dy;
             break;
+        case 'ellipse':
+            shape.data.x += dx;
+            shape.data.y += dy;
+            break;
         case 'circle':
             shape.data.x += dx;
             shape.data.y += dy;
@@ -714,23 +718,33 @@ function resizeEllipse(data, handle, dx, dy) {
         case 'resize-tr':
         case 'resize-bl':
         case 'resize-br':
-            // Corner handles: resize both axes proportionally
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const delta = (handle === 'resize-tl' || handle === 'resize-bl') ? -distance : distance;
-            data.radiusX = Math.max(5, data.radiusX + delta);
-            data.radiusY = Math.max(5, data.radiusY + delta);
+            // Corner handles: resize both axes based on actual drag direction
+            // For top-left: dragging left/up shrinks, right/down grows
+            // For top-right: dragging right/up grows horizontally, shrinks vertically
+            // For bottom-left: dragging left/down shrinks horizontally, grows vertically
+            // For bottom-right: dragging right/down grows
+            const deltas = {
+                'resize-tl': [-dx, -dy],
+                'resize-tr': [dx, -dy],
+                'resize-bl': [-dx, dy],
+                'resize-br': [dx, dy]
+            };
+            const [deltaX, deltaY] = deltas[handle];
+            
+            data.radiusX = Math.max(5, data.radiusX + deltaX);
+            data.radiusY = Math.max(5, data.radiusY + deltaY);
             break;
         case 'resize-t':
         case 'resize-b':
             // Top/bottom handles: resize vertical radius only
-            const deltaY = handle === 'resize-t' ? -dy : dy;
-            data.radiusY = Math.max(5, data.radiusY + deltaY);
+            const deltaYEdge = handle === 'resize-t' ? -dy : dy;
+            data.radiusY = Math.max(5, data.radiusY + deltaYEdge);
             break;
         case 'resize-l':
         case 'resize-r':
             // Left/right handles: resize horizontal radius only
-            const deltaX = handle === 'resize-l' ? -dx : dx;
-            data.radiusX = Math.max(5, data.radiusX + deltaX);
+            const deltaXEdge = handle === 'resize-l' ? -dx : dx;
+            data.radiusX = Math.max(5, data.radiusX + deltaXEdge);
             break;
     }
 }
