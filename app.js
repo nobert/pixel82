@@ -723,21 +723,13 @@ function resizeEllipse(data, handle, dx, dy) {
             // For top-right: dragging right/up grows horizontally, shrinks vertically
             // For bottom-left: dragging left/down shrinks horizontally, grows vertically
             // For bottom-right: dragging right/down grows
-            let deltaX, deltaY;
-            
-            if (handle === 'resize-tl') {
-                deltaX = -dx;  // Dragging left increases radius
-                deltaY = -dy;  // Dragging up increases radius
-            } else if (handle === 'resize-tr') {
-                deltaX = dx;   // Dragging right increases radius
-                deltaY = -dy;  // Dragging up increases radius
-            } else if (handle === 'resize-bl') {
-                deltaX = -dx;  // Dragging left increases radius
-                deltaY = dy;   // Dragging down increases radius
-            } else { // resize-br
-                deltaX = dx;   // Dragging right increases radius
-                deltaY = dy;   // Dragging down increases radius
-            }
+            const deltas = {
+                'resize-tl': [-dx, -dy],
+                'resize-tr': [dx, -dy],
+                'resize-bl': [-dx, dy],
+                'resize-br': [dx, dy]
+            };
+            const [deltaX, deltaY] = deltas[handle];
             
             data.radiusX = Math.max(5, data.radiusX + deltaX);
             data.radiusY = Math.max(5, data.radiusY + deltaY);
