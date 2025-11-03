@@ -20,4 +20,3 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
-test_image.png
